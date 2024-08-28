@@ -1,0 +1,75 @@
+import { EventDispatcher } from "./EventDispatcher"
+import { BaseShape } from "./Shape/BaseShape"
+import { EditMod } from "./utils/EditMod"
+
+export class MyCanvas extends EventDispatcher {
+  private canvas: HTMLCanvasElement
+  private ctx: CanvasRenderingContext2D
+  private shapeList: BaseShape[] = []
+  constructor(el: HTMLElement = document.body) {
+    super()
+    this.canvas = document.createElement('canvas')
+    this.setContainerSize(el.offsetWidth, el.offsetHeight)
+    this.ctx = this.canvas.getContext('2d')!
+    el.appendChild(this.canvas)
+
+    this.update()
+    this.initEvent()
+  }
+
+  setContainerSize(width: number, height: number) {
+    this.canvas.width = width
+    this.canvas.height = height
+  }
+
+  add(shape: BaseShape | EditMod) {
+    if (shape instanceof EditMod) {
+      shape.install(this)
+    } else {
+      this.shapeList.push(shape)
+      shape.canvas = this
+    }
+    this.render()
+  }
+
+  private update() {
+    let isNeedUpdate = false
+    this.shapeList.forEach((shape) => {
+      if (shape.isNeedUpdate) {
+        shape.isNeedUpdate = false
+        isNeedUpdate = true
+      }
+    })
+    
+    if (isNeedUpdate) {
+      this.shapeList.sort((a, b) => a.getIndex - b.getIndex)
+      this.render()
+    }
+    requestAnimationFrame(this.update.bind(this))
+  }
+
+  private render() {
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
+    this.shapeList.forEach(shape => shape.render(this.ctx))
+  }
+
+  private initEvent() {
+    EventDispatcher.EVENT.forEach(event => {
+      this.canvas.addEventListener(event, (e) => {
+        this.dispatch(event, e)
+        // 获取当前点击的图形, 并且阻止事件向下传递
+        let lastShape: BaseShape | undefined
+        
+        this.shapeList.forEach(shape => {
+          if (this.ctx.isPointInPath(shape.path2D, e.offsetX, e.offsetY)) {
+            if (!lastShape || lastShape.getIndex <= shape.getIndex) {
+              lastShape = shape
+            }
+          }
+        })
+        
+        lastShape && lastShape.dispatch(event, e)
+      })
+    })
+  }
+}
