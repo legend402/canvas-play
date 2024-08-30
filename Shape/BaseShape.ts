@@ -1,10 +1,11 @@
 import { EventDispatcher } from "../EventDispatcher"
 import { MyCanvas } from "../MyCanvas";
-import { LineStyle, Point, ShapeType } from "../types";
+import { BaseShapeOptions, LineStyle, Point, ShapeType } from "../types";
 import { DragMod } from "../utils/DragMod";
+import { uuid } from "../utils/utils";
 
-export abstract class BaseShape<T extends Record<string, any> = any> extends EventDispatcher {
-  protected id: string = Math.random().toString(36).slice(2)
+export abstract class BaseShape<T extends BaseShapeOptions & { [key: string]: any } = any> extends EventDispatcher {
+  protected id: string = uuid()
   protected config = {} as T;
   abstract type: ShapeType
   drag: DragMod | undefined;
@@ -38,14 +39,15 @@ export abstract class BaseShape<T extends Record<string, any> = any> extends Eve
   getCenterPoint(): Point {
     switch (this.type) {
       case ShapeType.Circle:
+      case ShapeType.Rect:
         return {
           x: this.config.x,
           y: this.config.y
         }
       default:
         return {
-          x: this.config.x + this.config.width / 2,
-          y: this.config.y + this.config.height / 2
+          x: 0,
+          y: 0
         }
     }
   }
@@ -62,6 +64,9 @@ export abstract class BaseShape<T extends Record<string, any> = any> extends Eve
 
   update(config: Partial<T>) {
     this.config = Object.assign({}, this.config, config)
+    if (config.zIndex) {
+      this.setIndex(config.zIndex)
+    }
     if (this.ctx) {
       this.isNeedUpdate = true
       this.render()

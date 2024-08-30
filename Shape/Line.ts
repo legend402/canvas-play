@@ -1,14 +1,10 @@
-import { Point, ShapeType } from "../types";
+import { BaseShapeOptions, LineStyle, Point, ShapeType } from "../types";
 import { DragMod, DragOptions } from "../utils/DragMod";
 import { BaseShape } from "./BaseShape";
 
-export type LineConfig = {
+export type LineConfig = BaseShapeOptions & {
   path: Point[]
-  stroke?: string;
-  strokeWidth?: number;
-  lineStyle?: 'solid' | 'dashed' | 'dotted';
-  autoClose?: boolean;
-  draggable?: boolean | DragOptions;
+  autoClose?: boolean
 }
 
 export class Line extends BaseShape<LineConfig> {
@@ -17,8 +13,10 @@ export class Line extends BaseShape<LineConfig> {
   constructor(config: LineConfig) {
     super()
     this.config = Object.assign({
-      lineStyle: 'solid'
+      lineStyle: 'solid',
+      opacity: 1,
     }, config)
+    this.setIndex(config.zIndex)
     if (config.draggable) {
       this.drag = new DragMod(this, typeof config.draggable === 'boolean' ? {} : config.draggable)
     }
@@ -53,6 +51,7 @@ export class Line extends BaseShape<LineConfig> {
     this.ctx.strokeStyle = this.config.stroke || '#000000'
     this.ctx.lineWidth = this.config.strokeWidth || 1
     this.setLineStyle(this.config.lineStyle || 'dashed')
+    this.ctx.filter = `opacity(${this.config.opacity})`
     this.ctx.stroke(this.path2D)
   }
 }

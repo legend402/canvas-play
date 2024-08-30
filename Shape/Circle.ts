@@ -1,18 +1,14 @@
-import { LineStyle, ShapeType } from "../types";
+import { BaseShapeOptions, LineStyle, ShapeType } from "../types";
 import { BaseShape } from "./BaseShape";
 import { DragMod, DragOptions } from "../utils/DragMod";
 
-export type CircleConfig = {
+export type CircleConfig = BaseShapeOptions & {
   x: number;
   y: number;
   radius: number;
   radiusX?: number;
   radiusY?: number;
   fill?: string;
-  stroke?: string;
-  strokeWidth?: number;
-  lineStyle?: LineStyle;
-  draggable?: boolean | DragOptions;
 }
 
 export class Circle extends BaseShape<CircleConfig> {
@@ -23,7 +19,9 @@ export class Circle extends BaseShape<CircleConfig> {
       lineStyle: 'solid',
       radiusX: config.radius,
       radiusY: config.radius,
+      opacity: 1,
     }, config)
+    this.setIndex(config.zIndex)
     
     if (config.draggable) {
       this.drag = new DragMod(this, typeof config.draggable === 'boolean' ? {} : config.draggable)
@@ -32,6 +30,14 @@ export class Circle extends BaseShape<CircleConfig> {
 
   clone(config: Partial<CircleConfig> = {}) {
     return new Circle(Object.assign({}, this.config, config))
+  }
+
+  get x() {
+    return this.config.x
+  }
+
+  get y() {
+    return this.config.y
   }
 
   setDraggable(draggable: boolean) {
@@ -51,6 +57,7 @@ export class Circle extends BaseShape<CircleConfig> {
     this.ctx.strokeStyle = this.config.stroke || 'transparent'
     this.ctx.lineWidth = this.config.strokeWidth || 0
     this.setLineStyle(this.config.lineStyle || 'dashed')
+    this.ctx.filter = `opacity(${this.config.opacity})`
     this.ctx.fill(this.path2D)
     this.ctx.stroke(this.path2D)
   }

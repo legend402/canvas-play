@@ -1,8 +1,9 @@
-import { CustomOnDrag, Point, ShapeType } from "../types";
+import { CustomOnDrag, Point, ShapeType, ShapeWH } from "../types";
 import { BaseShape } from "../Shape/BaseShape";
-import { Line } from "../Shape/Line";
+import { Rect } from "../Shape/Rect";
 import { Circle } from "../Shape/Circle";
 import { MyCanvas } from "../MyCanvas";
+import { uuid } from "./utils";
 
 type ShapeEdge = {
   topLeft: Point,
@@ -12,43 +13,56 @@ type ShapeEdge = {
 }
 
 export class EditMod {
+  id = uuid()
   shape: BaseShape
-  line: Line = new Line({ path: [] })
+  line: Rect = new Rect({ x: 0, y: 0, height: 0, width: 0 })
   dots: Circle[] = []
+
+  canvas: MyCanvas | undefined
+  isActive = false
   constructor(shape: BaseShape) {
     this.shape = shape
     this.init()
   }
   init() {
-    const path = this.getShapeEdge(this.shape)
+    const path = this.getShapeEdge(this.shape.getConfig, this.shape.type)
     this.initBorder(path)
     this.initDots(path)
+    this.initEvent()
   }
 
   install(cvs: MyCanvas) {
+    this.canvas = cvs
     cvs.add(this.shape)
     cvs.add(this.line)
     this.dots.forEach(dot => cvs.add(dot))
   }
 
-  initBorder(points: ShapeEdge) {
+  uninstall(cvs: MyCanvas) {
+    cvs.remove(this.shape)
+    cvs.remove(this.line)
+    this.dots.forEach(dot => cvs.remove(dot))
+  }
+  
+  private initBorder(points: ShapeEdge) {
     let dotsPoints: Point[] = []
     let shapeConfig = {}
-    this.line = new Line({
-      path: [
-        points.topLeft,
-        points.topRight,
-        points.bottomRight,
-        points.bottomLeft,
-      ],
+    const width = Math.abs(points.topRight.x - points.topLeft.x)
+    const height = Math.abs(points.bottomLeft.y - points.topLeft.y)
+    this.line = new Rect({
+      x: points.topLeft.x + width / 2,
+      y: points.topLeft.y + height / 2,
+      width,
+      height,
       stroke: 'red',
       strokeWidth: 1,
       lineStyle: 'dashed',
-      autoClose: true,
+      fill: 'transparent',
+      opacity: 0,
       draggable: {
         onDragStart: () => {
           dotsPoints = this.dots.map(item => item.getCenterPoint())
-          shapeConfig = { ...this.shape.getConfig }
+          shapeConfig = this.shape.getConfig
         },
         onDrag: ({ offsetX, offsetY }) => {
           this.dots.forEach((dot, i) => {
@@ -63,81 +77,83 @@ export class EditMod {
     })
   }
 
-  initDots(path: ShapeEdge) {
+  private initDots(path: ShapeEdge) {
     const dots = this.getDotsPoint(path)
-    dots.forEach((dot, i) => {
-      let path: Point[] = []
-      let shapeConfig = {}
-      const circle = new Circle({
+    let shapeConfig = this.shape.getConfig
+    this.dots = dots.map((dot, i) => 
+      new Circle({
         x: dot.x,
         y: dot.y,
         radius: 5,
         fill: '#4e6ef2',
         stroke: 'red',
         strokeWidth: 1,
+        opacity: 0,
         draggable: {
           onlyX: i % 2 !== 0,
           onlyY: i % 2 === 0,
           onDragStart: () => {
-            path = this.line!.getConfig.path
-            shapeConfig = { ...this.shape.getConfig }
+            shapeConfig = this.shape.getConfig
           },
           onDrag: (e) => {
-            this.updateBorderDots(e, path, i)
-            this.updateDots(i)
             this.updateShape(e, shapeConfig, i)
+            this.updateBorder(e, shapeConfig, i)
+            this.updateDots(e, shapeConfig, i)
+          },
+          onDragEnd: () => {
+            // 变形结束后，恢复dot位置
+            const y1 = this.dots[0].y, y2 = this.dots[2].y
+            const x1 = this.dots[3].x, x2 = this.dots[1].x
+            if (y1 > y2) {
+              this.dots[0].update({ y: y2 })
+              this.dots[2].update({ y: y1 })
+            }
+            if (x1 > x2) {
+              this.dots[3].update({ x: x2 })
+              this.dots[1].update({ x: x1 })
+            }
           }
         }
       })
-      this.dots.push(circle)
-    })
+    )
   }
-  updateBorderDots(e: CustomOnDrag, path: Point[], i: number) {
+  private updateBorder(e: CustomOnDrag, shapeConfig: any, i: number) {
+    const { width, height } = this.getShapeWH(shapeConfig, this.shape.type)
     if (i === 0) {
-      this.line!.update({
-        path: [
-          { x: path[0].x, y: path[0].y + e.offsetY },
-          { x: path[1].x, y: path[1].y + e.offsetY },
-          path[2],
-          path[3],
-        ]
+      this.line.update({
+        y: shapeConfig.y + e.offsetY / 2,
+        height: Math.abs(height - e.offsetY)
       })
-    }
-    if (i === 1) {
-      this.line!.update({
-        path: [
-          path[0],
-          { x: path[1].x + e.offsetX, y: path[1].y },
-          { x: path[2].x + e.offsetX, y: path[2].y },
-          path[3],
-        ]
+    } else if (i === 1) {
+      this.line.update({
+        x: shapeConfig.x + e.offsetX / 2,
+        width: Math.abs(width + e.offsetX)
       })
-    }
-    if (i === 2) {
-      this.line!.update({
-        path: [
-          path[0],
-          path[1],
-          { x: path[2].x, y: path[2].y + e.offsetY },
-          { x: path[3].x, y: path[3].y + e.offsetY },
-        ]
+    } else if (i === 2) {
+      this.line.update({
+        y: shapeConfig.y + e.offsetY / 2,
+        height: Math.abs(height + e.offsetY)
       })
-    }
-    if (i === 3) {
-      this.line!.update({
-        path: [
-          { x: path[0].x + e.offsetX, y: path[0].y },
-          path[1],
-          path[2],
-          { x: path[3].x + e.offsetX, y: path[3].y },
-        ]
+    } else if (i === 3) {
+      this.line.update({
+        x: shapeConfig.x + e.offsetX / 2,
+        width: Math.abs(width - e.offsetX)
       })
     }
   }
-  updateDots(i: number) {
-    const { topLeft, topRight, bottomLeft } = this.getShapeEdge(this.line!)
-    const dotY = this.dots[0].getConfig.y + (bottomLeft.y - topLeft.y) / 2
-    const dotX = this.dots[3].getConfig.x + (topRight.x - topLeft.x) / 2
+  private updateDots({ offsetX, offsetY }: CustomOnDrag, shapeConfig: any, i: number) {
+    const { topLeft, topRight, bottomLeft } = this.getShapeEdge(this.line.getConfig, this.line.type)
+    const { width, height } = this.getShapeWH(shapeConfig, this.shape.type)
+
+    let dotY = this.dots[0].getConfig.y + (bottomLeft.y - topLeft.y) / 2
+    if (offsetY < 0 && height < Math.abs(offsetY) && i === 3 || !(dotY >= topLeft.y && dotY <= bottomLeft.y)) {
+      dotY = this.dots[0].getConfig.y - (bottomLeft.y - topLeft.y) / 2
+    }
+    let dotX = this.dots[3].getConfig.x + (topRight.x - topLeft.x) / 2
+    if (offsetX < 0 && width < Math.abs(offsetX) && i === 1 || !(dotX >= topLeft.x && dotX <= topRight.x)) {
+      dotX = this.dots[3].getConfig.x - (topRight.x - topLeft.x) / 2
+    }
+    
     if (i === 0) {
       this.dots[1].update({
         y: dotY,
@@ -166,7 +182,6 @@ export class EditMod {
       })
     }
     if (i === 3) {
-      
       this.dots[0].update({
         x: dotX,
       })
@@ -176,92 +191,93 @@ export class EditMod {
       })
     }
   }
-  updateShape(e: CustomOnDrag, shapeConfig: any, i: number) {
+  private updateShape(e: CustomOnDrag, shapeConfig: any, i: number) {
     switch (this.shape.type) {
       case ShapeType.Circle:
         if (i === 0) {
           this.shape.update({
             y: shapeConfig.y + e.offsetY / 2,
-            radiusY: shapeConfig.radiusY - (e.offsetY / 2)
+            radiusY: Math.abs(shapeConfig.radiusY - (e.offsetY / 2))
           })
         } else if (i === 1) {
           this.shape.update({
             x: shapeConfig.x + e.offsetX / 2,
-            radiusX: shapeConfig.radiusX + (e.offsetX / 2)
+            radiusX: Math.abs(shapeConfig.radiusX + (e.offsetX / 2))
           })
         } else if (i === 2) {
           this.shape.update({
             y: shapeConfig.y + e.offsetY / 2,
-            radiusY: shapeConfig.radiusY + (e.offsetY / 2)
+            radiusY: Math.abs(shapeConfig.radiusY + (e.offsetY / 2))
           })
         } else if (i === 3) {
           this.shape.update({
             x: shapeConfig.x + e.offsetX / 2,
-            radiusX: shapeConfig.radiusX - (e.offsetX / 2)
+            radiusX: Math.abs(shapeConfig.radiusX - (e.offsetX / 2))
           })
         }
         return
       case ShapeType.Rect:
         if (i === 0) {
           this.shape.update({
-            y: shapeConfig.y + e.offsetY,
-            height: shapeConfig.height - e.offsetY
+            y: shapeConfig.y + e.offsetY / 2,
+            height: Math.abs(shapeConfig.height - e.offsetY)
           })
         } else if (i === 1) {
           this.shape.update({
-            width: shapeConfig.width + e.offsetX
+            x: shapeConfig.x + e.offsetX / 2,
+            width: Math.abs(shapeConfig.width + e.offsetX)
           })
         } else if (i === 2) {
           this.shape.update({
-            height: shapeConfig.height + e.offsetY
+            y: shapeConfig.y + e.offsetY / 2,
+            height: Math.abs(shapeConfig.height + e.offsetY)
           })
         } else if (i === 3) {
           this.shape.update({
-            x: shapeConfig.x + e.offsetX,
-            width: shapeConfig.width - e.offsetX
+            x: shapeConfig.x + e.offsetX / 2,
+            width: Math.abs(shapeConfig.width - e.offsetX)
           })
         }
     }
   }
-  getShapeEdge(shape: BaseShape): ShapeEdge {
-    const config = shape.getConfig
-    switch (shape.type) {
+  getShapeEdge(config: any, type: ShapeType): ShapeEdge {
+    switch (type) {
       case ShapeType.Circle:
         return {
           topLeft: {
-            x: config.x - config.radius,
-            y: config.y - config.radius
+            x: config.x - config.radiusX,
+            y: config.y - config.radiusY
           },
           topRight: {
-            x: config.x + config.radius,
-            y: config.y - config.radius
+            x: config.x + config.radiusX,
+            y: config.y - config.radiusY
           },
           bottomRight: {
-            x: config.x + config.radius,
-            y: config.y + config.radius
+            x: config.x + config.radiusX,
+            y: config.y + config.radiusY
           },
           bottomLeft: {
-            x: config.x - config.radius,
-            y: config.y + config.radius
+            x: config.x - config.radiusX,
+            y: config.y + config.radiusY
           },
         }
       case ShapeType.Rect:
         return {
           topLeft: {
-            x: config.x,
-            y: config.y
+            x: config.x - config.width / 2,
+            y: config.y - config.height / 2
           },
           topRight: {
-            x: config.x + config.width,
-            y: config.y
+            x: config.x + config.width / 2,
+            y: config.y - config.height / 2
           },
           bottomRight: {
-            x: config.x + config.width,
-            y: config.y + config.height
+            x: config.x + config.width / 2,
+            y: config.y + config.height / 2
           },
           bottomLeft: {
-            x: config.x,
-            y: config.y + config.height
+            x: config.x - config.width / 2,
+            y: config.y + config.height / 2
           },
         }
       case ShapeType.Line:
@@ -317,7 +333,7 @@ export class EditMod {
     }
   }
 
-  getDotsPoint(path: ShapeEdge): Point[] {
+  private getDotsPoint(path: ShapeEdge): Point[] {
     return [
       // top
       {
@@ -340,5 +356,66 @@ export class EditMod {
         y: (path.topLeft.y + path.bottomLeft.y) / 2
       }
     ]
+  }
+
+  private getShapeWH(config: any, type: ShapeType): ShapeWH {
+    switch(type) {
+      case ShapeType.Circle:
+        return {
+          width: config.radiusX * 2,
+          height: config.radiusY * 2,
+        }
+      case ShapeType.Rect:
+        return {
+          width: config.width,
+          height: config.height,
+        }
+      case ShapeType.Polygon:
+      case ShapeType.Line:
+        const edge = this.getPathShapeEdge(config.path)
+        return {
+          width: edge.maxX - edge.minX,
+          height: edge.maxY - edge.minY,
+        }
+    }
+    return {
+      width: 0,
+      height: 0
+    }
+  }
+
+  private initEvent() {
+    [this.line, ... this.dots].forEach(shape => {
+      shape.on('clickOutside', () => {
+        if (!this.isActive) return
+        this.isActive = false
+        this.shape.update({
+          zIndex: this.shape.getIndex - 9999,
+        })
+        this.line.update({
+          opacity: 0,
+          zIndex: this.line.getIndex - 9999,
+        })
+        this.dots.forEach(dot => dot.update({
+          opacity: 0,
+          zIndex: dot.getIndex - 9999,
+        }))
+      })
+      shape.on(['click', 'mousedown'], () => {
+        if (this.isActive) return
+        this.isActive = true
+        this.shape.update({
+          zIndex: this.shape.getIndex + 9999,
+        })
+        this.line.update({
+          opacity: 1,
+          zIndex: this.line.getIndex + 9999,
+        })
+        this.dots.forEach(dot => dot.update({
+          opacity: 1,
+          zIndex: dot.getIndex + 9999,
+        }))
+      })
+    })
   }
 }

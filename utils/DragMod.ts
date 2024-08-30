@@ -15,6 +15,8 @@ export class DragMod {
   draggable = true
   private options: Required<DragOptions> = {} as any
   private isDrag = false
+
+  anchorShapeConfig: any
   private removeMouseMove = () => {}
   constructor(shape: BaseShape, options: DragOptions = {}) {
     this.shape = shape
@@ -26,6 +28,7 @@ export class DragMod {
       onDragEnd: () => {},
       ...options
     }
+    this.anchorShapeConfig = this.shape.getConfig
     this.initDraggable()
   }
   initDraggable() {
@@ -33,11 +36,13 @@ export class DragMod {
       if (!this.draggable) return
       this.isDrag = true
       const { clientX: startX, clientY: startY } = e
-      const config = this.shape.getConfig
+      this.anchorShapeConfig = this.shape.getConfig
       this.options.onDragStart(e)
       this.removeMouseMove = addEventListener(document, 'mousemove', (e: MouseEvent) => {
         const { clientX: moveX, clientY: moveY } = e
-        this.updateShapePoint(moveX - startX, moveY - startY, config)
+        const offsetX = moveX - startX, offsetY = moveY - startY
+        this.updateShapePoint(offsetX, offsetY)
+        this.options.onDrag({ offsetX, offsetY })
       })
     })
     addEventListener(document, 'mouseup', (e: MouseEvent) => {
@@ -48,8 +53,9 @@ export class DragMod {
       }
     })
   }
-  updateShapePoint(offsetX: number, offsetY: number, { path, x, y }: any) {
+  updateShapePoint(offsetX: number, offsetY: number, shapeConfig?: any) {
     const { onlyX, onlyY } = this.options
+    const { x, y, path } = shapeConfig || this.anchorShapeConfig
     switch(this.shape.type) {
       case ShapeType.Polygon:
       case ShapeType.Line: 
@@ -73,7 +79,6 @@ export class DragMod {
             }))
           })
         }
-        this.options.onDrag({ offsetX, offsetY })
         return;
       default:
         if (onlyX) {
@@ -90,7 +95,6 @@ export class DragMod {
             y: y + offsetY,
           })
         }
-        this.options.onDrag({ offsetX, offsetY })
     }
   }
   setDraggable(draggable: boolean) {

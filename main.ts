@@ -15,6 +15,7 @@ const rect1 = new Rect({
   fill: 'red',
   stroke: 'blue',
   strokeWidth: 2,
+  radius: [10, 20],
   draggable: true
 })
 const rect2 = rect1.clone({ draggable: true })

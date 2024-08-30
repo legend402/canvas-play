@@ -1,6 +1,7 @@
 import { EventDispatcher } from "./EventDispatcher"
 import { BaseShape } from "./Shape/BaseShape"
 import { EditMod } from "./utils/EditMod"
+import { addEventListener } from "./utils/utils"
 
 export class MyCanvas extends EventDispatcher {
   private canvas: HTMLCanvasElement
@@ -15,6 +16,7 @@ export class MyCanvas extends EventDispatcher {
 
     this.update()
     this.initEvent()
+    this.initResize(el)
   }
 
   setContainerSize(width: number, height: number) {
@@ -28,6 +30,14 @@ export class MyCanvas extends EventDispatcher {
     } else {
       this.shapeList.push(shape)
       shape.canvas = this
+    }
+    this.render()
+  }
+  remove(shape: BaseShape | EditMod) {
+    if (shape instanceof EditMod) {
+      shape.uninstall(this)
+    } else {
+      this.shapeList = this.shapeList.filter(spe => spe === shape)
     }
     this.render()
   }
@@ -54,7 +64,7 @@ export class MyCanvas extends EventDispatcher {
   }
 
   private initEvent() {
-    EventDispatcher.EVENT.forEach(event => {
+    EventDispatcher.EVENT.filter(evt => evt !== 'clickOutside').forEach(event => {
       this.canvas.addEventListener(event, (e) => {
         this.dispatch(event, e)
         // 获取当前点击的图形, 并且阻止事件向下传递
@@ -65,11 +75,20 @@ export class MyCanvas extends EventDispatcher {
             if (!lastShape || lastShape.getIndex <= shape.getIndex) {
               lastShape = shape
             }
+          } else {
+            event === 'mousedown' && shape.dispatch('clickOutside', e)
           }
         })
         
         lastShape && lastShape.dispatch(event, e)
       })
+    })
+  }
+
+  private initResize(el: HTMLElement) {
+    addEventListener(window, 'resize', () => {
+      this.setContainerSize(el.offsetWidth, el.offsetHeight)
+      this.render()
     })
   }
 }

@@ -1,14 +1,10 @@
-import { LineStyle, Point, ShapeType } from "../types";
+import { BaseShapeOptions, Point, ShapeType } from "../types";
 import { BaseShape } from "./BaseShape";
-import { DragMod, DragOptions } from "../utils/DragMod";
+import { DragMod } from "../utils/DragMod";
 
-export type RectConfig = {
+export type RectConfig = BaseShapeOptions & {
   path: Point[]
   fill?: string;
-  stroke?: string;
-  strokeWidth?: number;
-  lineStyle?: LineStyle;
-  draggable?: boolean | DragOptions;
 }
 
 export class Polygon extends BaseShape<RectConfig> {
@@ -17,8 +13,10 @@ export class Polygon extends BaseShape<RectConfig> {
   constructor(config: RectConfig) {
     super()
     this.config = Object.assign({
-      lineStyle: 'solid'
+      lineStyle: 'solid',
+      opacity: 1,
     }, config)
+    this.setIndex(config.zIndex)
     if (config.draggable) {
       this.drag = new DragMod(this, typeof config.draggable === 'boolean' ? {} : config.draggable)
     }
@@ -51,6 +49,7 @@ export class Polygon extends BaseShape<RectConfig> {
     this.ctx.strokeStyle = this.config.stroke || 'transparent'
     this.ctx.lineWidth = this.config.strokeWidth || 0
     this.setLineStyle(this.config.lineStyle || 'dashed')
+    this.ctx.filter = `opacity(${this.config.opacity})`
     this.ctx.fill(this.path2D)
     this.ctx.stroke(this.path2D)
   }
