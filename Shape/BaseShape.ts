@@ -36,13 +36,21 @@ export abstract class BaseShape<T extends BaseShapeOptions & { [key: string]: an
     this.update({})
   }
 
-  getCenterPoint(): Point {
+  getCenterPoint(config?: any): Point {
+    config = config || this.config
     switch (this.type) {
       case ShapeType.Circle:
       case ShapeType.Rect:
         return {
-          x: this.config.x,
-          y: this.config.y
+          x: config.x,
+          y: config.y
+        }
+      case ShapeType.Line:
+      case ShapeType.Polygon:
+        const { minX, minY, maxX, maxY } = this.getPathShapeEdge(config.path)
+        return {
+          x: (maxX + minX) / 2,
+          y: (maxY + minY) / 2
         }
       default:
         return {
@@ -50,6 +58,23 @@ export abstract class BaseShape<T extends BaseShapeOptions & { [key: string]: an
           y: 0
         }
     }
+  }
+  private getPathShapeEdge(path: Point[]) {
+    const x = path.map(item => item.x)
+    const y = path.map(item => item.y)
+    return {
+      maxX: Math.max(...x),
+      minX: Math.min(...x),
+      maxY: Math.max(...y),
+      minY: Math.min(...y),
+    }
+  }
+
+  setDraggable(draggable: boolean) {
+    if (!this.drag) {
+      this.drag = new DragMod(this)
+    }
+    this.drag.setDraggable(draggable)
   }
 
   setLineStyle(lineStyle: LineStyle) {

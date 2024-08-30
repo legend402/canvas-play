@@ -39,13 +39,6 @@ export class Circle extends BaseShape<CircleConfig> {
   get y() {
     return this.config.y
   }
-
-  setDraggable(draggable: boolean) {
-    if (!this.drag) {
-      this.drag = new DragMod(this)
-    }
-    this.drag.setDraggable(draggable)
-  }
   
   render(ctx?: CanvasRenderingContext2D) {
     this.ctx = ctx ?? this.ctx!

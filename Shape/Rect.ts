@@ -31,13 +31,6 @@ export class Rect extends BaseShape<RectConfig> {
     return new Rect(Object.assign({}, this.config, config))
   }
 
-  setDraggable(draggable: boolean) {
-    if (!this.drag) {
-      this.drag = new DragMod(this)
-    }
-    this.drag.setDraggable(draggable)
-  }
-
   get x() {
     return this.config.x
   }

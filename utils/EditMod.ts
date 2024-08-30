@@ -22,6 +22,7 @@ export class EditMod {
   isActive = false
   constructor(shape: BaseShape) {
     this.shape = shape
+    shape.setDraggable(true)
     this.init()
   }
   init() {
@@ -119,24 +120,26 @@ export class EditMod {
   }
   private updateBorder(e: CustomOnDrag, shapeConfig: any, i: number) {
     const { width, height } = this.getShapeWH(shapeConfig, this.shape.type)
+    const { x, y } = this.shape.getCenterPoint(shapeConfig)
+    
     if (i === 0) {
       this.line.update({
-        y: shapeConfig.y + e.offsetY / 2,
+        y: y + e.offsetY / 2,
         height: Math.abs(height - e.offsetY)
       })
     } else if (i === 1) {
       this.line.update({
-        x: shapeConfig.x + e.offsetX / 2,
+        x: x + e.offsetX / 2,
         width: Math.abs(width + e.offsetX)
       })
     } else if (i === 2) {
       this.line.update({
-        y: shapeConfig.y + e.offsetY / 2,
+        y: y + e.offsetY / 2,
         height: Math.abs(height + e.offsetY)
       })
     } else if (i === 3) {
       this.line.update({
-        x: shapeConfig.x + e.offsetX / 2,
+        x: x + e.offsetX / 2,
         width: Math.abs(width - e.offsetX)
       })
     }
@@ -238,6 +241,51 @@ export class EditMod {
             width: Math.abs(shapeConfig.width - e.offsetX)
           })
         }
+        return
+      case ShapeType.Line:
+      case ShapeType.Polygon:
+        const { minX, minY } = this.getPathShapeEdge(shapeConfig.path)
+        const { width, height } = this.getShapeWH(shapeConfig, this.shape.type)
+        if (i === 0) {
+          console.log(height - e.offsetY);
+          
+          this.shape.update({
+            path: shapeConfig.path.map(({ x, y }: Point) => {
+              return {
+                x,
+                y: (y - minY) / height * (height - e.offsetY) + minY - e.offsetY
+              }
+            })
+          })
+        } else if (i === 1) {
+          this.shape.update({
+            path: shapeConfig.path.map(({ x, y }: Point) => {
+              return {
+                x: (x - minX) / width * (width + e.offsetX) + minX,
+                y
+              }
+            })
+          })
+        } else if (i === 2) {
+          this.shape.update({
+            path: shapeConfig.path.map(({ x, y }: Point) => {
+              return {
+                x,
+                y: (y - minY) / height * (height + e.offsetY) + minY
+              }
+            })
+          })
+        } else if (i === 3) {
+          this.shape.update({
+            path: shapeConfig.path.map(({ x, y }: Point) => {
+              return {
+                x: (x - minX) / width * (width - e.offsetX) + minX - e.offsetX,
+                y
+              }
+            })
+          })
+        }
+        return
     }
   }
   getShapeEdge(config: any, type: ShapeType): ShapeEdge {

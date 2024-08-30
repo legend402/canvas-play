@@ -18,11 +18,7 @@ const rect1 = new Rect({
   radius: [10, 20],
   draggable: true
 })
-const rect2 = rect1.clone({ draggable: true })
 
-rect2.update({
-  fill: 'green'
-})
 const circle = new Circle({
   x: 300,
   y: 300,
@@ -30,6 +26,17 @@ const circle = new Circle({
   fill: 'red',
   draggable: true
 })
+
+const polygon = new Polygon({
+  path: [
+    { x: 150, y: 300 },
+    { x: 250, y: 250 },
+    { x: 200, y: 400 },
+  ],
+  fill: 'blue'
+})
+const polygonPlus = new EditMod(polygon)
+canvs.add(polygonPlus)
 const circlePlus = new EditMod(circle)
 canvs.add(circlePlus)
 const rectPlus = new EditMod(rect1)
