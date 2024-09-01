@@ -1,12 +1,18 @@
 import { EventDispatcher } from "./EventDispatcher"
 import { BaseShape } from "./Shape/BaseShape"
-import { EditMod } from "./utils/EditMod"
+import { EditOptions } from "./types"
+import { EditMod } from "./mod/EditMod"
 import { addEventListener } from "./utils/utils"
 
-export class MyCanvas extends EventDispatcher {
+export default class MyCanvas extends EventDispatcher {
   private canvas: HTMLCanvasElement
   private ctx: CanvasRenderingContext2D
+
   private shapeList: BaseShape[] = []
+  
+  private editList: EditMod[] = []
+  private editOptions: Partial<EditOptions>
+
   constructor(el: HTMLElement = document.body) {
     super()
     this.canvas = document.createElement('canvas')
@@ -27,6 +33,8 @@ export class MyCanvas extends EventDispatcher {
   add(shape: BaseShape | EditMod) {
     if (shape instanceof EditMod) {
       shape.install(this)
+      this.editList.push(shape)
+      this.editOptions && shape.update(this.editOptions)
     } else {
       this.shapeList.push(shape)
       shape.canvas = this
@@ -36,10 +44,18 @@ export class MyCanvas extends EventDispatcher {
   remove(shape: BaseShape | EditMod) {
     if (shape instanceof EditMod) {
       shape.uninstall(this)
+      this.editList = this.editList.filter(spe => spe === shape)
     } else {
       this.shapeList = this.shapeList.filter(spe => spe === shape)
     }
     this.render()
+  }
+
+  setEditOptions(options: Partial<EditOptions>) {
+    this.editOptions = options
+    this.editList.forEach(shape => {
+      shape.update(options)
+    })
   }
 
   private update() {
@@ -69,7 +85,6 @@ export class MyCanvas extends EventDispatcher {
         this.dispatch(event, e)
         // 获取当前点击的图形, 并且阻止事件向下传递
         let lastShape: BaseShape | undefined
-        
         this.shapeList.forEach(shape => {
           if (this.ctx.isPointInPath(shape.path2D, e.offsetX, e.offsetY)) {
             if (!lastShape || lastShape.getIndex <= shape.getIndex) {

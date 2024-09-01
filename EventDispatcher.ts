@@ -1,7 +1,7 @@
 import { EventHandler, MouseType } from "./types";
 
 export class EventDispatcher {
-  static EVENT = ['click', 'clickOutside', 'mouseup', 'mousedown', 'mousemove'] as const
+  static EVENT = ['click', 'clickOutside', 'mouseup', 'mousedown', 'mousemove', 'dblclick'] as const
   private listeners: Record<MouseType, EventHandler[]> = {} as any;
 
   on(eventName: MouseType | MouseType[], handler: EventHandler, { once = false } = {}) {
@@ -10,13 +10,14 @@ export class EventDispatcher {
       if (!this.listeners[eventName]) {
         this.listeners[eventName] = [];
       }
+      let fn = handler
       if (once) {
-        handler = (event) => {
+        fn = (event) => {
           handler(event);
-          this.off(eventName, handler);
+          this.off(eventName, fn);
         };
       }
-      this.listeners[eventName].push(handler);
+      this.listeners[eventName].push(fn);
     })
   }
 

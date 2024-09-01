@@ -1,4 +1,4 @@
-import { DragOptions } from "./utils/DragMod";
+import { DragOptions } from "./mod/DragMod";
 
 export enum ShapeType {
   Circle = 'circle',
@@ -6,10 +6,11 @@ export enum ShapeType {
   Polygon = 'polygon',
   Line = 'line',
   Text = 'text',
-  Image = 'image',
+  Picture = 'picture',
+  EditMod = 'EditMod'
 }
 
-export type MouseType = 'mouseup' | 'mousedown' | 'mousemove' | 'click' | 'clickOutside'
+export type MouseType = 'mouseup' | 'mousedown' | 'mousemove' | 'click' | 'clickOutside' | 'dblclick'
 
 export type EventHandler = (event: MouseEvent) => void
 
@@ -34,4 +35,16 @@ export type BaseShapeOptions = {
   draggable?: boolean | DragOptions;
   opacity?: number;
   zIndex?:number;
+}
+
+export type EditOptions = {
+  borderColor: string;
+  borderWidth: number;
+  borderStyle: LineStyle;
+  dotStyle: {
+    fill: string;
+    size: number;
+    stroke: string;
+    strokeWidth: number;
+  }
 }

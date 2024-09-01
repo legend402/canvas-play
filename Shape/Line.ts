@@ -1,5 +1,5 @@
 import { BaseShapeOptions, LineStyle, Point, ShapeType } from "../types";
-import { DragMod, DragOptions } from "../utils/DragMod";
+import { DragMod, DragOptions } from "../mod/DragMod";
 import { BaseShape } from "./BaseShape";
 
 export type LineConfig = BaseShapeOptions & {
@@ -24,6 +24,10 @@ export class Line extends BaseShape<LineConfig> {
 
   clone(config: Partial<LineConfig> = {}) {
     return new Line(Object.assign({}, this.config, config))
+  }
+
+  get getPath() {
+    return [...this.config.path]
   }
 
   render(ctx?: CanvasRenderingContext2D) {

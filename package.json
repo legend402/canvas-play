@@ -1,0 +1,11 @@
+{
+	"scripts": {
+		"dev": "vite dev",
+		"build": "vite build"
+	},
+	"dependencies": {
+		"@types/lodash-es": "^4.17.12",
+		"lodash-es": "^4.17.21",
+		"vite": "^5.4.2"
+	}
+}

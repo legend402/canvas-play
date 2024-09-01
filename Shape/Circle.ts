@@ -1,6 +1,6 @@
 import { BaseShapeOptions, LineStyle, ShapeType } from "../types";
 import { BaseShape } from "./BaseShape";
-import { DragMod, DragOptions } from "../utils/DragMod";
+import { DragMod, DragOptions } from "../mod/DragMod";
 
 export type CircleConfig = BaseShapeOptions & {
   x: number;

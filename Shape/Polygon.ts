@@ -1,6 +1,6 @@
 import { BaseShapeOptions, Point, ShapeType } from "../types";
 import { BaseShape } from "./BaseShape";
-import { DragMod } from "../utils/DragMod";
+import { DragMod } from "../mod/DragMod";
 
 export type RectConfig = BaseShapeOptions & {
   path: Point[]
@@ -24,6 +24,10 @@ export class Polygon extends BaseShape<RectConfig> {
 
   clone(config: Partial<RectConfig> = {}) {
     return new Polygon(Object.assign({}, this.config, config))
+  }
+
+  get getPath() {
+    return [...this.config.path]
   }
 
   render(ctx?: CanvasRenderingContext2D) {

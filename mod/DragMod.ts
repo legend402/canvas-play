@@ -1,5 +1,5 @@
 import { CustomOnDrag, Point, ShapeType } from "../types";
-import { addEventListener } from "./utils";
+import { addEventListener } from "../utils/utils";
 import { BaseShape } from "../Shape/BaseShape";
 
 export type DragOptions = {

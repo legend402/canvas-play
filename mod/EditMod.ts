@@ -1,9 +1,10 @@
-import { CustomOnDrag, Point, ShapeType, ShapeWH } from "../types";
+import { CustomOnDrag, EditOptions, Point, ShapeType, ShapeWH } from "../types";
 import { BaseShape } from "../Shape/BaseShape";
 import { Rect } from "../Shape/Rect";
 import { Circle } from "../Shape/Circle";
-import { MyCanvas } from "../MyCanvas";
-import { uuid } from "./utils";
+import MyCanvas from "../MyCanvas";
+import { uuid } from "../utils/utils";
+import { merge } from "lodash-es";
 
 type ShapeEdge = {
   topLeft: Point,
@@ -12,16 +13,32 @@ type ShapeEdge = {
   bottomLeft: Point,
 }
 
+const defaultOptions: EditOptions = {
+  borderColor: 'red',
+  borderWidth: 1,
+  borderStyle: 'dashed',
+  dotStyle: {
+    fill: '#4e6ef2',
+    size: 8,
+    stroke: 'red',
+    strokeWidth: 1,
+  }
+}
+
 export class EditMod {
   id = uuid()
-  shape: BaseShape
-  line: Rect = new Rect({ x: 0, y: 0, height: 0, width: 0 })
-  dots: Circle[] = []
+  type = ShapeType.EditMod
+
+  private shape: BaseShape
+  private line: Rect = new Rect({ x: 0, y: 0, height: 0, width: 0 })
+  private dots: Circle[] = []
+  private options: EditOptions
 
   canvas: MyCanvas | undefined
   isActive = false
-  constructor(shape: BaseShape) {
+  constructor(shape: BaseShape, options: Partial<EditOptions> = {}) {
     this.shape = shape
+    this.options = merge({}, defaultOptions, options)
     shape.setDraggable(true)
     this.init()
   }
@@ -45,6 +62,24 @@ export class EditMod {
     this.dots.forEach(dot => cvs.remove(dot))
   }
   
+  update(options: Partial<EditOptions> = {}) {
+    this.options = merge({}, this.options, options)
+    
+    this.line.update({
+      stroke: this.options.borderColor,
+      strokeWidth: this.options.borderWidth,
+      lineStyle: this.options.borderStyle,
+    })
+    this.dots.forEach(dot => {
+      dot.update({
+        radius: this.options.dotStyle.size,
+        fill: this.options.dotStyle.fill,
+        stroke: this.options.dotStyle.stroke,
+        strokeWidth: this.options.dotStyle.strokeWidth,
+      })
+    })
+  }
+
   private initBorder(points: ShapeEdge) {
     let dotsPoints: Point[] = []
     let shapeConfig = {}
@@ -55,9 +90,9 @@ export class EditMod {
       y: points.topLeft.y + height / 2,
       width,
       height,
-      stroke: 'red',
-      strokeWidth: 1,
-      lineStyle: 'dashed',
+      stroke: this.options.borderColor,
+      strokeWidth: this.options.borderWidth,
+      lineStyle: this.options.borderStyle,
       fill: 'transparent',
       opacity: 0,
       draggable: {
@@ -85,10 +120,10 @@ export class EditMod {
       new Circle({
         x: dot.x,
         y: dot.y,
-        radius: 5,
-        fill: '#4e6ef2',
-        stroke: 'red',
-        strokeWidth: 1,
+        radius: this.options.dotStyle.size,
+        fill: this.options.dotStyle.fill,
+        stroke: this.options.dotStyle.stroke,
+        strokeWidth: this.options.dotStyle.strokeWidth,
         opacity: 0,
         draggable: {
           onlyX: i % 2 !== 0,
@@ -220,6 +255,7 @@ export class EditMod {
         }
         return
       case ShapeType.Rect:
+      case ShapeType.Picture:
         if (i === 0) {
           this.shape.update({
             y: shapeConfig.y + e.offsetY / 2,
@@ -247,13 +283,11 @@ export class EditMod {
         const { minX, minY } = this.getPathShapeEdge(shapeConfig.path)
         const { width, height } = this.getShapeWH(shapeConfig, this.shape.type)
         if (i === 0) {
-          console.log(height - e.offsetY);
-          
           this.shape.update({
             path: shapeConfig.path.map(({ x, y }: Point) => {
               return {
                 x,
-                y: (y - minY) / height * (height - e.offsetY) + minY - e.offsetY
+                y: (y - minY) / height * (height - e.offsetY) + minY + e.offsetY
               }
             })
           })
@@ -279,7 +313,7 @@ export class EditMod {
           this.shape.update({
             path: shapeConfig.path.map(({ x, y }: Point) => {
               return {
-                x: (x - minX) / width * (width - e.offsetX) + minX - e.offsetX,
+                x: (x - minX) / width * (width - e.offsetX) + minX + e.offsetX,
                 y
               }
             })
@@ -310,6 +344,7 @@ export class EditMod {
           },
         }
       case ShapeType.Rect:
+      case ShapeType.Picture:
         return {
           topLeft: {
             x: config.x - config.width / 2,
@@ -414,6 +449,7 @@ export class EditMod {
           height: config.radiusY * 2,
         }
       case ShapeType.Rect:
+      case ShapeType.Picture:
         return {
           width: config.width,
           height: config.height,

@@ -1,7 +1,7 @@
 import { EventDispatcher } from "../EventDispatcher"
-import { MyCanvas } from "../MyCanvas";
+import MyCanvas from "../MyCanvas";
 import { BaseShapeOptions, LineStyle, Point, ShapeType } from "../types";
-import { DragMod } from "../utils/DragMod";
+import { DragMod } from "../mod/DragMod";
 import { uuid } from "../utils/utils";
 
 export abstract class BaseShape<T extends BaseShapeOptions & { [key: string]: any } = any> extends EventDispatcher {
@@ -41,6 +41,7 @@ export abstract class BaseShape<T extends BaseShapeOptions & { [key: string]: an
     switch (this.type) {
       case ShapeType.Circle:
       case ShapeType.Rect:
+      case ShapeType.Picture:
         return {
           x: config.x,
           y: config.y
