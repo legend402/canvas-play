@@ -3,7 +3,7 @@ import { BaseShape } from "./BaseShape";
 import { DragMod } from "../mod/DragMod";
 import { loadImage } from "../utils/utils";
 
-export type ImageConfig = BaseShapeOptions & {
+export type PictureConfig = BaseShapeOptions & {
   src: string;
   x: number;
   y: number;
@@ -12,12 +12,13 @@ export type ImageConfig = BaseShapeOptions & {
   radius?: number | number[];
 }
 
-export class Picture extends BaseShape<ImageConfig> {
+export class Picture extends BaseShape<PictureConfig> {
   type = ShapeType.Picture
+  isImageLoaded = true
   imgLoadedFn = () => {}
   private cacheImg: HTMLImageElement[] = []
 
-  constructor(config: ImageConfig) {
+  constructor(config: PictureConfig) {
     super()
     this.config = Object.assign({
       lineStyle: 'solid',
@@ -32,7 +33,7 @@ export class Picture extends BaseShape<ImageConfig> {
     }
   }
 
-  clone(config: Partial<ImageConfig> = {}) {
+  clone(config: Partial<PictureConfig> = {}) {
     return new Picture(Object.assign({}, this.config, config))
   }
 
@@ -79,11 +80,14 @@ export class Picture extends BaseShape<ImageConfig> {
     if (img) {
       this.renderImg(img)
     } else {
+      if (!this.isImageLoaded) return
+      this.isImageLoaded = false
       loadImage(this.config.src)
       .then(img => {
         this.cacheImg.push(img)
         this.renderImg(img)
         this.imgLoadedFn()
+        this.isImageLoaded = true
       })
     }
   }
@@ -102,6 +106,5 @@ export class Picture extends BaseShape<ImageConfig> {
     this.ctx!.lineWidth = 0
     this.ctx!.drawImage(img, x, y, width, height)
     this.ctx!.fill(this.path2D)
-    this.ctx!.stroke(this.path2D)
   }
 }

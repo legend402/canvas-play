@@ -1,10 +1,13 @@
-import { EventHandler, MouseType } from "./types";
+import { EventHandler } from "./types";
 
-export class EventDispatcher {
-  static EVENT = ['click', 'clickOutside', 'mouseup', 'mousedown', 'mousemove', 'dblclick'] as const
-  private listeners: Record<MouseType, EventHandler[]> = {} as any;
+export const DOM_EVENT = ['click', 'clickOutside', 'mouseup', 'mousedown', 'mousemove', 'dblclick'] as const
 
-  on(eventName: MouseType | MouseType[], handler: EventHandler, { once = false } = {}) {
+export type MouseType = typeof DOM_EVENT[number]
+
+export class EventDispatcher<T extends string = MouseType, E extends any = MouseEvent> {
+  private listeners: Record<T, EventHandler<E>[]> = {} as any;
+
+  on(eventName: T | T[], handler: EventHandler<E>, { once = false } = {}) {
     eventName = Array.isArray(eventName) ? eventName : [eventName];
     eventName.forEach(eventName => {
       if (!this.listeners[eventName]) {
@@ -21,7 +24,7 @@ export class EventDispatcher {
     })
   }
 
-  off(eventName: MouseType | MouseType[], handler: EventHandler) {
+  off(eventName: T | T[], handler: EventHandler<E>) {
     eventName = Array.isArray(eventName) ? eventName : [eventName];
     eventName.forEach(eventName => {
       if (!this.listeners[eventName]) return
@@ -31,7 +34,7 @@ export class EventDispatcher {
     })
   }
 
-  dispatch(eventName: MouseType, event: MouseEvent) {
+  dispatch(eventName: T, event?: E) {
     if (!this.listeners[eventName]) return
     this.listeners[eventName].forEach((listener) => {
       listener(event);

@@ -10,9 +10,7 @@ export enum ShapeType {
   EditMod = 'EditMod'
 }
 
-export type MouseType = 'mouseup' | 'mousedown' | 'mousemove' | 'click' | 'clickOutside' | 'dblclick'
-
-export type EventHandler = (event: MouseEvent) => void
+export type EventHandler<T extends any = MouseEvent> = (event: T) => void
 
 export type Point = {
   x: number;

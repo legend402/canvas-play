@@ -50,12 +50,18 @@ const image = new Picture({
   src: 'https://mdn.github.io/shared-assets/images/examples/rhino.jpg',
   x: 300,
   y: 100,
+  width: 100,
+  height: 100,
   draggable: true,
   zIndex: 3,
 })
-
-const imagePlus = new EditMod(image)
 canvs.add(image)
+image.onPictureLoaded(() => {
+  requestAnimationFrame(() => {
+    const imagePlus = new EditMod(image)
+    canvs.add(imagePlus)
+  })
+})
 
 const linePlus = new EditMod(line)
 canvs.add(linePlus)
@@ -73,18 +79,26 @@ canvs.add(rectPlus)
 
 const paint = new PaintMod(canvs)
 
-document.querySelector<HTMLButtonElement>('.circle').addEventListener('click', () => {
+document.querySelector<HTMLButtonElement>('.circle')!.addEventListener('click', () => {
   paint.drawCircle()
 })
-document.querySelector<HTMLButtonElement>('.ellipse').addEventListener('click', () => {
+document.querySelector<HTMLButtonElement>('.ellipse')!.addEventListener('click', () => {
   paint.drawCircle({ ellipse: true })
 })
-document.querySelector<HTMLButtonElement>('.rect').addEventListener('click', () => {
+document.querySelector<HTMLButtonElement>('.rect')!.addEventListener('click', () => {
   paint.drawRect()
 })
-document.querySelector<HTMLButtonElement>('.square').addEventListener('click', () => {
+document.querySelector<HTMLButtonElement>('.square')!.addEventListener('click', () => {
   paint.drawRect({ square: true })
 })
-document.querySelector<HTMLButtonElement>('.line').addEventListener('click', () => {
+document.querySelector<HTMLButtonElement>('.line')!.addEventListener('click', () => {
   paint.drawLine()
+})
+document.querySelector<HTMLButtonElement>('.polygon')!.addEventListener('click', () => {
+  paint.drawPolygon()
+})
+
+paint.on('drawEnd', (shape) => {
+  const shapePlus = new EditMod(shape)
+  canvs.add(shapePlus)
 })

@@ -1,4 +1,4 @@
-import { EventDispatcher } from "./EventDispatcher"
+import { DOM_EVENT, EventDispatcher } from "./EventDispatcher"
 import { BaseShape } from "./Shape/BaseShape"
 import { EditOptions } from "./types"
 import { EditMod } from "./mod/EditMod"
@@ -36,8 +36,10 @@ export default class MyCanvas extends EventDispatcher {
       this.editList.push(shape)
       this.editOptions && shape.update(this.editOptions)
     } else {
-      this.shapeList.push(shape)
-      shape.canvas = this
+      if (!this.shapeList.includes(shape)) {
+        this.shapeList.push(shape)
+        shape.canvas = this
+      }
     }
     this.render()
   }
@@ -80,7 +82,7 @@ export default class MyCanvas extends EventDispatcher {
   }
 
   private initEvent() {
-    EventDispatcher.EVENT.filter(evt => evt !== 'clickOutside').forEach(event => {
+    DOM_EVENT.filter(evt => evt !== 'clickOutside').forEach(event => {
       this.canvas.addEventListener(event, (e) => {
         this.dispatch(event, e)
         // 获取当前点击的图形, 并且阻止事件向下传递

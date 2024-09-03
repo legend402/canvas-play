@@ -44,6 +44,8 @@ export class EditMod {
   }
   init() {
     const path = this.getShapeEdge(this.shape.getConfig, this.shape.type)
+    this.shape.type === ShapeType.Picture && console.log(path);
+    
     this.initBorder(path)
     this.initDots(path)
     this.initEvent()
@@ -85,6 +87,8 @@ export class EditMod {
     let shapeConfig = {}
     const width = Math.abs(points.topRight.x - points.topLeft.x)
     const height = Math.abs(points.bottomLeft.y - points.topLeft.y)
+    this.shape.type === ShapeType.Picture && console.log(points.topLeft.x + width / 2, points.topLeft.y + height / 2);
+    
     this.line = new Rect({
       x: points.topLeft.x + width / 2,
       y: points.topLeft.y + height / 2,
@@ -478,11 +482,11 @@ export class EditMod {
         })
         this.line.update({
           opacity: 0,
-          zIndex: this.line.getIndex - 9999,
+          zIndex: this.line.getIndex - 10000,
         })
         this.dots.forEach(dot => dot.update({
           opacity: 0,
-          zIndex: dot.getIndex - 9999,
+          zIndex: dot.getIndex - 10000,
         }))
       })
       shape.on(['click', 'mousedown'], () => {
@@ -493,11 +497,11 @@ export class EditMod {
         })
         this.line.update({
           opacity: 1,
-          zIndex: this.line.getIndex + 9999,
+          zIndex: this.line.getIndex + 10000,
         })
         this.dots.forEach(dot => dot.update({
           opacity: 1,
-          zIndex: dot.getIndex + 9999,
+          zIndex: dot.getIndex + 10000,
         }))
       })
     })

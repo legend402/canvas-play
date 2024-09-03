@@ -1,5 +1,5 @@
-import { BaseShapeOptions, LineStyle, Point, ShapeType } from "../types";
-import { DragMod, DragOptions } from "../mod/DragMod";
+import { BaseShapeOptions, Point, ShapeType } from "../types";
+import { DragMod } from "../mod/DragMod";
 import { BaseShape } from "./BaseShape";
 
 export type LineConfig = BaseShapeOptions & {
